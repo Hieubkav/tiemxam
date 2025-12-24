@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X, ChevronRight, ChevronLeft, ArrowUp, Phone } from 'lucide-react';
-import { HERO_IMAGES, PORTFOLIO_ITEMS, LATEST_ITEMS, NEWS } from './lib/constants';
-import { ServicesSection } from './components/ServicesSection';
-import { TestimonialsSection } from './components/TestimonialsSection';
+import { HERO_IMAGES, PORTFOLIO_ITEMS, LATEST_ITEMS, NEWS } from '../lib/constants';
+import { ServicesSection } from '../components/ServicesSection';
+import { TestimonialsSection } from '../components/TestimonialsSection';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
