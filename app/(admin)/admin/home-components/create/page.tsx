@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 const componentTypes = [
   { value: 'hero', label: 'Hero Banner' },
@@ -17,6 +19,7 @@ const componentTypes = [
 
 export default function CreateHomeComponentPage() {
   const router = useRouter();
+  const createComponent = useMutation(api.homeComponents.create);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -28,11 +31,14 @@ export default function CreateHomeComponentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    alert('Tạo component thành công!');
+
+    await createComponent({
+      name: formData.name,
+      type: formData.type,
+      active: formData.active,
+      config: formData.config ? formData.config : undefined,
+    });
+
     router.push('/admin/home-components');
   };
 
@@ -125,7 +131,7 @@ export default function CreateHomeComponentPage() {
               href="/admin/home-components"
               className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
             >
-              Huỷ
+              Hủy
             </Link>
           </div>
         </div>

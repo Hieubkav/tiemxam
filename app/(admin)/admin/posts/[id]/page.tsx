@@ -1,47 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Trash2, Image } from 'lucide-react';
-
-const samplePosts = [
-  {
-    id: 1,
-    title: 'Hướng dẫn chăm sóc hình xăm sau khi xăm',
-    slug: 'huong-dan-cham-soc-hinh-xam',
-    excerpt: 'Các lưu ý quan trọng để chăm sóc hình xăm đúng cách...',
-    content: 'Nội dung bài viết mẫu...',
-    thumbnail: '',
-    active: true,
-  },
-  {
-    id: 2,
-    title: 'Top 10 mẫu tattoo được yêu thích nhất 2024',
-    slug: 'top-10-mau-tattoo-2024',
-    excerpt: 'Tổng hợp những mẫu hình xăm hot nhất trong năm...',
-    content: 'Nội dung bài viết mẫu...',
-    thumbnail: '',
-    active: true,
-  },
-  {
-    id: 3,
-    title: 'Ý nghĩa các hình xăm phổ biến',
-    slug: 'y-nghia-cac-hinh-xam-pho-bien',
-    excerpt: 'Giải thích ý nghĩa của những mẫu hình xăm phổ biến...',
-    content: 'Nội dung bài viết mẫu...',
-    thumbnail: '',
-    active: false,
-  },
-];
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 export default function EditPostPage() {
   const router = useRouter();
   const params = useParams();
-  const rawId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const postId = Number(rawId);
+  const id = params?.id as Id<'posts'> | undefined;
 
-  const selected = useMemo(() => samplePosts.find((post) => post.id === postId), [postId]);
+  const selected = useQuery(api.posts.getById, id ? { id } : 'skip');
+  const updatePost = useMutation(api.posts.update);
+  const removePost = useMutation(api.posts.remove);
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,9 +32,9 @@ export default function EditPostPage() {
     setFormData({
       title: selected.title,
       slug: selected.slug,
-      excerpt: selected.excerpt,
+      excerpt: selected.excerpt ?? '',
       content: selected.content,
-      thumbnail: selected.thumbnail,
+      thumbnail: selected.thumbnail ?? '',
       active: selected.active,
     });
   }, [selected]);
@@ -88,19 +62,32 @@ export default function EditPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     setLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    alert('Cap nhat bai viet thanh cong!');
-    router.push('/admin/posts');
+    try {
+      await updatePost({
+        id,
+        title: formData.title,
+        slug: formData.slug,
+        excerpt: formData.excerpt ? formData.excerpt : undefined,
+        content: formData.content,
+        thumbnail: formData.thumbnail ? formData.thumbnail : undefined,
+        active: formData.active,
+      });
+      router.push('/admin/posts');
+    } catch (err) {
+      alert('Không thể cập nhật bài viết. Vui lòng kiểm tra slug.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Ban co chac chan muon xoa bai viet nay?')) return;
+    if (!id) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    alert('Da xoa bai viet!');
+    await removePost({ id });
     router.push('/admin/posts');
   };
 
@@ -121,7 +108,7 @@ export default function EditPostPage() {
         </div>
       </div>
 
-      {!selected && (
+      {selected === null && (
         <div className="p-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg">
           Không tìm thấy bài viết theo ID. Bạn có thể tạo mới hoặc kiểm tra lại.
         </div>
@@ -207,7 +194,7 @@ export default function EditPostPage() {
               <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !selected}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
                 >
                   <Save size={18} />
@@ -218,7 +205,7 @@ export default function EditPostPage() {
                 href="/admin/posts"
                 className="block text-center px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                Huy
+                Hủy
               </Link>
             </div>
 

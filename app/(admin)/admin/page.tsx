@@ -2,25 +2,71 @@
 
 import { Layers, FileText, Users, Eye } from 'lucide-react';
 import Link from 'next/link';
-
-const stats = [
-  { label: 'Components trang chủ', value: '6', icon: Layers, color: 'bg-indigo-500', href: '/admin/home-components' },
-  { label: 'Bài viết', value: '12', icon: FileText, color: 'bg-green-500', href: '/admin/posts' },
-  { label: 'Người dùng', value: '3', icon: Users, color: 'bg-orange-500', href: '/admin/users' },
-  { label: 'Lượt xem hôm nay', value: '256', icon: Eye, color: 'bg-pink-500', href: '#' },
-];
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export default function AdminDashboard() {
+  const homeComponents = useQuery(api.homeComponents.list, {});
+  const posts = useQuery(api.posts.list, {});
+  const visitorStats = useQuery(api.visitors.stats, {});
+
+  const stats = [
+    {
+      label: 'Components trang chủ',
+      value: homeComponents?.length ?? 0,
+      icon: Layers,
+      color: 'bg-indigo-500',
+      href: '/admin/home-components',
+    },
+    {
+      label: 'Bài viết',
+      value: posts?.length ?? 0,
+      icon: FileText,
+      color: 'bg-green-500',
+      href: '/admin/posts',
+    },
+    {
+      label: 'Unique visitors',
+      value: visitorStats?.uniqueVisitors ?? 0,
+      icon: Users,
+      color: 'bg-orange-500',
+      href: '/admin',
+    },
+    {
+      label: 'Tổng lượt truy cập',
+      value: visitorStats?.totalVisits ?? 0,
+      icon: Eye,
+      color: 'bg-pink-500',
+      href: '/admin',
+    },
+  ];
+
+  const recentPosts = (posts ?? []).slice(0, 3);
+
+  const activities = [
+    ...(homeComponents ?? []).map((item) => ({
+      type: 'component',
+      title: item.name,
+      updatedAt: item.updatedAt,
+    })),
+    ...(posts ?? []).map((item) => ({
+      type: 'post',
+      title: item.title,
+      updatedAt: item.updatedAt,
+    })),
+  ]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 3);
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
         <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Chào mừng đến trang quản trị Trung Địa Tattoo
+          Chào mừng đến trang quản trị Trung Dõa Tattoo
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <Link
@@ -41,7 +87,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
       <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Thao tác nhanh</h2>
         <div className="flex flex-wrap gap-3">
@@ -66,36 +111,51 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Bài viết gần đây</h2>
           <div className="space-y-3">
-            {['Hướng dẫn chăm sóc hình xăm', 'Top 10 mẫu tattoo 2024', 'Ý nghĩa các hình xăm'].map((title, idx) => (
-              <div key={idx} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <span className="text-sm text-slate-700 dark:text-slate-300">{title}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">2 ngày trước</span>
-              </div>
-            ))}
+            {recentPosts.length === 0 ? (
+              <div className="text-sm text-slate-500 dark:text-slate-400">Chưa có bài viết nào</div>
+            ) : (
+              recentPosts.map((post) => (
+                <div
+                  key={post._id}
+                  className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                >
+                  <span className="text-sm text-slate-700 dark:text-slate-300">{post.title}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {new Date(post.updatedAt).toLocaleDateString('vi-VN')}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Hoạt động gần đây</h2>
           <div className="space-y-3">
-            {[
-              'Admin đã cập nhật Hero Banner',
-              'Admin đã thêm bài viết mới',
-              'Admin đã thay đổi thông tin liên hệ',
-            ].map((activity, idx) => (
-              <div key={idx} className="flex items-center gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-sm text-slate-700 dark:text-slate-300">{activity}</span>
-              </div>
-            ))}
+            {activities.length === 0 ? (
+              <div className="text-sm text-slate-500 dark:text-slate-400">Chưa có hoạt động</div>
+            ) : (
+              activities.map((activity) => (
+                <div
+                  key={`${activity.type}-${activity.title}-${activity.updatedAt}`}
+                  className="flex items-center gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                >
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    {activity.type === 'post' ? 'Cập nhật bài viết: ' : 'Cập nhật component: '}
+                    {activity.title}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+

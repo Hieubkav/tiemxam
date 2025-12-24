@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Menu, Sun, Moon, ChevronRight, User, LogOut, Settings } from 'lucide-react';
 
 interface HeaderProps {
@@ -94,10 +95,13 @@ const Header: React.FC<HeaderProps> = ({
                   <User size={16} />
                   <span>Thông tin tài khoản</span>
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                <Link
+                  href="/admin/settings"
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                >
                   <Settings size={16} />
                   <span>Cài đặt</span>
-                </button>
+                </Link>
               </div>
 
               <div className="border-t border-slate-100 dark:border-slate-700 py-1">

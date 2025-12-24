@@ -5,12 +5,16 @@ import { Menu, X, ChevronRight, ChevronLeft, ArrowUp, Phone } from 'lucide-react
 import { HERO_IMAGES, PORTFOLIO_ITEMS, LATEST_ITEMS, NEWS } from '../lib/constants';
 import { ServicesSection } from '../components/ServicesSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [currentHero, setCurrentHero] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasTrackedRef = useRef(false);
+  const trackVisitor = useMutation(api.visitors.track);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -25,6 +29,29 @@ export default function Home() {
       clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (hasTrackedRef.current) return;
+    hasTrackedRef.current = true;
+
+    if (typeof window === 'undefined') return;
+    const storageKey = 'visitor-id';
+    let visitorId = localStorage.getItem(storageKey);
+    if (!visitorId) {
+      const uuid =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      visitorId = uuid;
+      localStorage.setItem(storageKey, visitorId);
+    }
+
+    trackVisitor({
+      visitorId,
+      path: window.location.pathname,
+      userAgent: navigator.userAgent,
+    });
+  }, [trackVisitor]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -210,7 +237,7 @@ export default function Home() {
           </div>
           <div className="mt-12 md:mt-14 text-center">
             <p className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-bold">
-              &copy; 2024 TRUNG DIA TATTOO. HIGH PRECISION ARTISTRY.
+              &copy; 2024 TRUNG ĐỊA TATTOO. HIGH PRECISION ARTISTRY.
             </p>
           </div>
         </div>

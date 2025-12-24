@@ -36,6 +36,7 @@ export function useAdminLayout() {
       'home-components': '/admin/home-components',
       posts: '/admin/posts',
       users: '/admin/users',
+      settings: '/admin/settings',
     };
     const target = map[view];
     if (target) router.push(target);
@@ -45,6 +46,7 @@ export function useAdminLayout() {
     if (pathname?.includes('/home-components')) return 'home-components';
     if (pathname?.includes('/posts')) return 'posts';
     if (pathname?.includes('/users')) return 'users';
+    if (pathname?.includes('/settings')) return 'settings';
     return 'dashboard';
   };
 
@@ -53,20 +55,24 @@ export function useAdminLayout() {
 
     if (view === 'home-components') {
       if (pathname?.endsWith('/create')) return ['Giao diện trang chủ', 'Thêm mới'];
-      if (pathname?.match(/\/home-components\/\d+/)) return ['Giao diện trang chủ', 'Chỉnh sửa'];
+      if (pathname?.match(/\/home-components\/[^/]+/)) return ['Giao diện trang chủ', 'Chỉnh sửa'];
       return ['Giao diện trang chủ'];
     }
 
     if (view === 'posts') {
       if (pathname?.endsWith('/create')) return ['Bài viết', 'Thêm mới'];
-      if (pathname?.match(/\/posts\/\d+/)) return ['Bài viết', 'Chỉnh sửa'];
+      if (pathname?.match(/\/posts\/[^/]+/)) return ['Bài viết', 'Chỉnh sửa'];
       return ['Bài viết'];
     }
 
     if (view === 'users') {
       if (pathname?.endsWith('/create')) return ['Người dùng', 'Thêm mới'];
-      if (pathname?.match(/\/users\/\d+/)) return ['Người dùng', 'Chỉnh sửa'];
+      if (pathname?.match(/\/users\/[^/]+/)) return ['Người dùng', 'Chỉnh sửa'];
       return ['Người dùng'];
+    }
+
+    if (view === 'settings') {
+      return ['Cài đặt'];
     }
 
     return ['Dashboard'];

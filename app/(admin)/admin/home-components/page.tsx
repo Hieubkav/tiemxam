@@ -2,27 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Pencil, Trash2, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
-
-interface HomeComponent {
-  id: number;
-  name: string;
-  type: string;
-  active: boolean;
-  order: number;
-}
-
-const initialComponents: HomeComponent[] = [
-  { id: 1, name: 'Hero Slider', type: 'hero', active: true, order: 1 },
-  { id: 2, name: 'Hình Xăm Nổi Bật', type: 'portfolio', active: true, order: 2 },
-  { id: 3, name: 'Mẫu Hình Xăm Mới', type: 'latest', active: true, order: 3 },
-  { id: 4, name: 'Dịch Vụ', type: 'services', active: true, order: 4 },
-  { id: 5, name: 'Đánh Giá Khách Hàng', type: 'testimonials', active: true, order: 5 },
-  { id: 6, name: 'Bài Viết', type: 'posts', active: true, order: 6 },
-];
+import { Pencil, Trash2, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 export default function HomeComponentsPage() {
-  const [components, setComponents] = useState<HomeComponent[]>(initialComponents);
+  const components = useQuery(api.homeComponents.list, {});
+  const updateComponent = useMutation(api.homeComponents.update);
+  const removeComponent = useMutation(api.homeComponents.remove);
+
   const [toasts, setToasts] = useState<{ id: number; type: 'success' | 'error'; message: string }[]>([]);
 
   const pushToast = (type: 'success' | 'error', message: string) => {
@@ -33,38 +22,39 @@ export default function HomeComponentsPage() {
     }, 3000);
   };
 
-  const toggleStatus = (id: number) => {
-    setComponents((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
-    );
-    const comp = components.find((c) => c.id === id);
-    pushToast('success', comp?.active ? 'Đã ẩn component' : 'Đã hiển thị component');
+  const list = components ?? [];
+
+  const toggleStatus = async (id: Id<'home_components'>, active: boolean) => {
+    await updateComponent({ id, active: !active });
+    pushToast('success', active ? 'Đã ẩn component' : 'Đã hiển thị component');
   };
 
-  const moveUp = (id: number) => {
-    setComponents((prev) => {
-      const idx = prev.findIndex((c) => c.id === id);
-      if (idx <= 0) return prev;
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      return next.map((c, i) => ({ ...c, order: i + 1 }));
-    });
+  const moveUp = async (id: Id<'home_components'>) => {
+    const idx = list.findIndex((c) => c._id === id);
+    if (idx <= 0) return;
+    const current = list[idx];
+    const prev = list[idx - 1];
+    await Promise.all([
+      updateComponent({ id: current._id, order: prev.order }),
+      updateComponent({ id: prev._id, order: current.order }),
+    ]);
   };
 
-  const moveDown = (id: number) => {
-    setComponents((prev) => {
-      const idx = prev.findIndex((c) => c.id === id);
-      if (idx >= prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      return next.map((c, i) => ({ ...c, order: i + 1 }));
-    });
+  const moveDown = async (id: Id<'home_components'>) => {
+    const idx = list.findIndex((c) => c._id === id);
+    if (idx < 0 || idx >= list.length - 1) return;
+    const current = list[idx];
+    const next = list[idx + 1];
+    await Promise.all([
+      updateComponent({ id: current._id, order: next.order }),
+      updateComponent({ id: next._id, order: current.order }),
+    ]);
   };
 
-  const handleDelete = (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xoá component này?')) return;
-    setComponents((prev) => prev.filter((c) => c.id !== id));
-    pushToast('success', 'Đã xoá component');
+  const handleDelete = async (id: Id<'home_components'>) => {
+    if (!confirm('Ban co chac chan muon xoa component nay?')) return;
+    await removeComponent({ id });
+    pushToast('success', 'Da xoa component');
   };
 
   const getTypeLabel = (type: string) => {
@@ -110,16 +100,16 @@ export default function HomeComponentsPage() {
               </tr>
             </thead>
             <tbody>
-              {components.length === 0 ? (
+              {list.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                     Chưa có component nào
                   </td>
                 </tr>
               ) : (
-                components.map((comp, idx) => (
+                list.map((comp, idx) => (
                   <tr
-                    key={comp.id}
+                    key={comp._id}
                     className={`${
                       idx % 2 === 0 ? 'bg-white dark:bg-slate-800/60' : 'bg-slate-50 dark:bg-slate-800/40'
                     } border-b last:border-0 border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors`}
@@ -130,15 +120,15 @@ export default function HomeComponentsPage() {
                     <td className="px-4 py-4">
                       <div className="flex flex-col gap-1">
                         <button
-                          onClick={() => moveUp(comp.id)}
+                          onClick={() => moveUp(comp._id)}
                           disabled={idx === 0}
                           className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-30"
                         >
                           <ChevronUp size={16} />
                         </button>
                         <button
-                          onClick={() => moveDown(comp.id)}
-                          disabled={idx === components.length - 1}
+                          onClick={() => moveDown(comp._id)}
+                          disabled={idx === list.length - 1}
                           className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-30"
                         >
                           <ChevronDown size={16} />
@@ -155,7 +145,7 @@ export default function HomeComponentsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => toggleStatus(comp.id)}
+                        onClick={() => toggleStatus(comp._id, comp.active)}
                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                           comp.active
                             ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-100 dark:border-green-500/30'
@@ -169,13 +159,13 @@ export default function HomeComponentsPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/home-components/${comp.id}`}
+                          href={`/admin/home-components/${comp._id}`}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-700"
                         >
                           <Pencil size={16} />
                         </Link>
                         <button
-                          onClick={() => handleDelete(comp.id)}
+                          onClick={() => handleDelete(comp._id)}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-slate-700"
                         >
                           <Trash2 size={16} />
@@ -190,12 +180,11 @@ export default function HomeComponentsPage() {
         </div>
       </div>
 
-      {/* Toast stack */}
       <div className="fixed top-6 right-6 space-y-2 z-50">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`min-w-[240px] max-w-sm px-4 py-3 rounded-lg shadow-lg border ${
+            className={`min-w-60 max-w-sm px-4 py-3 rounded-lg shadow-lg border ${
               toast.type === 'success'
                 ? 'bg-green-600 text-white border-green-500'
                 : 'bg-red-600 text-white border-red-500'

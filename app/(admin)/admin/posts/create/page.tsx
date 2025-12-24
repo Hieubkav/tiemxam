@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Image } from 'lucide-react';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export default function CreatePostPage() {
   const router = useRouter();
+  const createPost = useMutation(api.posts.create);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -22,7 +25,7 @@ export default function CreatePostPage() {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
+      .replace(/d/g, 'd')
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
@@ -41,11 +44,22 @@ export default function CreatePostPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    alert('Tạo bài viết thành công!');
-    router.push('/admin/posts');
+
+    try {
+      await createPost({
+        title: formData.title,
+        slug: formData.slug,
+        excerpt: formData.excerpt ? formData.excerpt : undefined,
+        content: formData.content,
+        thumbnail: formData.thumbnail ? formData.thumbnail : undefined,
+        active: formData.active,
+      });
+      router.push('/admin/posts');
+    } catch (err) {
+      alert('Không thể tạo bài viết. Vui lòng kiểm tra slug.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,7 +81,6 @@ export default function CreatePostPage() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
               <div>
@@ -126,11 +139,10 @@ export default function CreatePostPage() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
               <h3 className="font-semibold text-slate-900 dark:text-white">Xuất bản</h3>
-              
+
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -158,7 +170,7 @@ export default function CreatePostPage() {
 
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4">
               <h3 className="font-semibold text-slate-900 dark:text-white">Ảnh đại diện</h3>
-              
+
               <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center">
                 <Image size={32} className="mx-auto text-slate-400 mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">

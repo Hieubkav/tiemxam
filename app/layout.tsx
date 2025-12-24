@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ConvexClientProvider from "./components/ConvexProvider";
 
 export const metadata: Metadata = {
   title: "Trung Địa Tattoo - Art & Precision",
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="antialiased min-h-screen">
-        {children}
+        <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>
   );

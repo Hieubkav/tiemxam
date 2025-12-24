@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 const componentTypes = [
   { value: 'hero', label: 'Hero Banner' },
@@ -15,25 +18,14 @@ const componentTypes = [
   { value: 'custom', label: 'Custom Section' },
 ];
 
-const sampleComponents = [
-  { id: 1, name: 'Hero Slider', type: 'hero', active: true },
-  { id: 2, name: 'Hình Xăm Nổi Bật', type: 'portfolio', active: true },
-  { id: 3, name: 'Mẫu Hình Xăm Mới', type: 'latest', active: true },
-  { id: 4, name: 'Dịch Vụ', type: 'services', active: true },
-  { id: 5, name: 'Đánh Giá Khách Hàng', type: 'testimonials', active: true },
-  { id: 6, name: 'Bài Viết', type: 'posts', active: true },
-];
-
 export default function EditHomeComponentPage() {
   const router = useRouter();
   const params = useParams();
-  const rawId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const componentId = Number(rawId);
+  const id = params?.id as Id<'home_components'> | undefined;
 
-  const selected = useMemo(
-    () => sampleComponents.find((comp) => comp.id === componentId),
-    [componentId]
-  );
+  const selected = useQuery(api.homeComponents.getById, id ? { id } : 'skip');
+  const updateComponent = useMutation(api.homeComponents.update);
+  const removeComponent = useMutation(api.homeComponents.remove);
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,33 +41,31 @@ export default function EditHomeComponentPage() {
       name: selected.name,
       type: selected.type,
       active: selected.active,
-      config: JSON.stringify(
-        {
-          title: selected.name,
-          enabled: selected.active,
-          items: [],
-        },
-        null,
-        2
-      ),
+      config: selected.config ?? '',
     });
   }, [selected]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     setLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await updateComponent({
+      id,
+      name: formData.name,
+      type: formData.type,
+      active: formData.active,
+      config: formData.config ? formData.config : undefined,
+    });
 
-    alert('Cập nhật component thành công!');
     router.push('/admin/home-components');
   };
 
   const handleDelete = async () => {
+    if (!id) return;
     if (!confirm('Bạn có chắc chắn muốn xóa component này?')) return;
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    alert('Đã xóa component!');
+    await removeComponent({ id });
     router.push('/admin/home-components');
   };
 
@@ -98,7 +88,7 @@ export default function EditHomeComponentPage() {
         </div>
       </div>
 
-      {!selected && (
+      {selected === null && (
         <div className="p-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg">
           Không tìm thấy component theo ID. Bạn có thể tạo mới hoặc cập nhật lại.
         </div>
@@ -166,7 +156,7 @@ export default function EditHomeComponentPage() {
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !selected}
               className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
             >
               <Save size={18} />
@@ -174,7 +164,7 @@ export default function EditHomeComponentPage() {
             </button>
             <Link
               href="/admin/home-components"
-              className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hoverbg-slate-700 transition"
             >
               Hủy
             </Link>

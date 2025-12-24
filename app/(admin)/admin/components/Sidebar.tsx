@@ -11,6 +11,7 @@ import {
   FileText,
   Layers,
   Home,
+  Settings,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'home-components', icon: Layers, label: 'Giao diện trang chủ', href: '/admin/home-components' },
     { id: 'posts', icon: FileText, label: 'Bài viết', href: '/admin/posts' },
     { id: 'users', icon: Users, label: 'Người dùng', href: '/admin/users' },
+    { id: 'settings', icon: Settings, label: 'Cài đặt', href: '/admin/settings' },
   ];
 
   const normalizePath = (path?: string | null) =>
