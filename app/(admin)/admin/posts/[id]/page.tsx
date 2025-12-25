@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Trash2, Image } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { toast } from 'sonner';
 
 export default function EditPostPage() {
   const router = useRouter();
@@ -75,9 +76,9 @@ export default function EditPostPage() {
         thumbnail: formData.thumbnail ? formData.thumbnail : undefined,
         active: formData.active,
       });
-      router.push('/admin/posts');
+      toast.success('Cập nhật bài viết thành công!');
     } catch (err) {
-      alert('Không thể cập nhật bài viết. Vui lòng kiểm tra slug.');
+      toast.error('Không thể cập nhật bài viết. Vui lòng kiểm tra slug.');
     } finally {
       setLoading(false);
     }

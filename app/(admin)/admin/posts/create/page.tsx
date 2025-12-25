@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Image } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { toast } from 'sonner';
 
 export default function CreatePostPage() {
   const router = useRouter();
@@ -54,9 +55,9 @@ export default function CreatePostPage() {
         thumbnail: formData.thumbnail ? formData.thumbnail : undefined,
         active: formData.active,
       });
-      router.push('/admin/posts');
+      toast.success('Tạo bài viết thành công!');
     } catch (err) {
-      alert('Không thể tạo bài viết. Vui lòng kiểm tra slug.');
+      toast.error('Không thể tạo bài viết. Vui lòng kiểm tra slug.');
     } finally {
       setLoading(false);
     }

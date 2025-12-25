@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const sampleUsers = [
   {
@@ -71,8 +72,8 @@ export default function EditUserPage() {
 
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
-    alert('Cập nhật người dùng thành công!');
-    router.push('/admin/users');
+    toast.success('Cập nhật người dùng thành công!');
+    setLoading(false);
   };
 
   const handleDelete = async () => {

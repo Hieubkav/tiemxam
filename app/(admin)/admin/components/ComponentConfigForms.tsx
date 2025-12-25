@@ -1,12 +1,11 @@
 'use client';
 
-import { ImageUpload } from './ImageUpload';
+import { SortableImageGrid } from './SortableImageGrid';
 
 // Định nghĩa các loại component và cấu hình của chúng
 export const componentTypes = [
   { value: 'hero', label: 'Hero Banner' },
   { value: 'portfolio', label: 'Portfolio Grid' },
-  { value: 'latest', label: 'Latest Works' },
   { value: 'services', label: 'Services' },
   { value: 'testimonials', label: 'Testimonials' },
   { value: 'posts', label: 'Blog Posts' },
@@ -24,17 +23,6 @@ export interface HeroConfig {
 export interface PortfolioConfig {
   title?: string;
   items: Array<{
-    title: string;
-    category: string;
-    storageId?: string;
-  }>;
-}
-
-export interface LatestConfig {
-  title?: string;
-  items: Array<{
-    title: string;
-    category: string;
     storageId?: string;
   }>;
 }
@@ -73,77 +61,17 @@ interface FormProps<T> {
 export function HeroForm({ value, onChange }: FormProps<HeroConfig>) {
   const slides = value.slides || [];
 
-  const updateSlide = (index: number, storageId: string | undefined) => {
-    const newSlides = [...slides];
-    newSlides[index] = { storageId };
-    onChange({ ...value, slides: newSlides });
-  };
-
-  const addSlide = () => {
-    onChange({ ...value, slides: [...slides, {}] });
-  };
-
-  const removeSlide = (index: number) => {
-    const newSlides = slides.filter((_, i) => i !== index);
-    onChange({ ...value, slides: newSlides });
-  };
-
   return (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          Tiêu đề
-        </label>
-        <input
-          type="text"
-          value={value.title || ''}
-          onChange={(e) => onChange({ ...value, title: e.target.value })}
-          className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          placeholder="Tiêu đề hero banner"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          Subtitle
-        </label>
-        <input
-          type="text"
-          value={value.subtitle || ''}
-          onChange={(e) => onChange({ ...value, subtitle: e.target.value })}
-          className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          placeholder="Subtitle"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
           Slides ({slides.length})
         </label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {slides.map((slide, index) => (
-            <div key={index} className="relative">
-              <ImageUpload
-                value={slide.storageId}
-                onChange={(storageId) => updateSlide(index, storageId)}
-              />
-              <button
-                type="button"
-                onClick={() => removeSlide(index)}
-                className="absolute -top-1 -right-1 text-xs bg-red-500 text-white px-2 py-0.5 rounded"
-              >
-                Xóa
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={addSlide}
-          className="mt-3 px-4 py-2 text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
-        >
-          + Thêm slide
-        </button>
+        <SortableImageGrid
+          items={slides}
+          onChange={(newSlides) => onChange({ ...value, slides: newSlides })}
+          columns={2}
+        />
       </div>
     </div>
   );
@@ -152,28 +80,6 @@ export function HeroForm({ value, onChange }: FormProps<HeroConfig>) {
 // Form cho Portfolio Grid
 export function PortfolioForm({ value, onChange }: FormProps<PortfolioConfig>) {
   const items = value.items || [];
-
-  const updateItem = (
-    index: number,
-    field: string,
-    val: string | undefined
-  ) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: val };
-    onChange({ ...value, items: newItems });
-  };
-
-  const addItem = () => {
-    onChange({
-      ...value,
-      items: [...items, { title: '', category: '' }],
-    });
-  };
-
-  const removeItem = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
-    onChange({ ...value, items: newItems });
-  };
 
   return (
     <div className="space-y-4">
@@ -194,61 +100,13 @@ export function PortfolioForm({ value, onChange }: FormProps<PortfolioConfig>) {
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
           Hình ảnh ({items.length})
         </label>
-        <div className="space-y-4">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="flex gap-4 p-4 border border-slate-200 dark:border-slate-700 rounded-lg"
-            >
-              <ImageUpload
-                value={item.storageId}
-                onChange={(storageId) => updateItem(index, 'storageId', storageId)}
-              />
-              <div className="flex-1 space-y-2">
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) => updateItem(index, 'title', e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-                  placeholder="Tiêu đề"
-                />
-                <input
-                  type="text"
-                  value={item.category}
-                  onChange={(e) => updateItem(index, 'category', e.target.value)}
-                  className="w-full px-3 py-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-                  placeholder="Danh mục"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem(index)}
-                  className="text-sm text-red-600 hover:text-red-700"
-                >
-                  Xóa
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={addItem}
-          className="mt-3 px-4 py-2 text-sm bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
-        >
-          + Thêm hình
-        </button>
+        <SortableImageGrid
+          items={items}
+          onChange={(newItems) => onChange({ ...value, items: newItems })}
+          columns={4}
+        />
       </div>
     </div>
-  );
-}
-
-// Form cho Latest Works (giống Portfolio)
-export function LatestForm({ value, onChange }: FormProps<LatestConfig>) {
-  return (
-    <PortfolioForm
-      value={value as PortfolioConfig}
-      onChange={onChange as (v: PortfolioConfig) => void}
-    />
   );
 }
 
@@ -544,13 +402,6 @@ export function ComponentConfigForm({ type, config, onChange }: DynamicFormProps
       return (
         <PortfolioForm
           value={(config as PortfolioConfig) || { items: [] }}
-          onChange={onChange}
-        />
-      );
-    case 'latest':
-      return (
-        <LatestForm
-          value={(config as LatestConfig) || { items: [] }}
           onChange={onChange}
         />
       );

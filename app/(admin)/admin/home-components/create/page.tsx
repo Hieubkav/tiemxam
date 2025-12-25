@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { toast } from 'sonner';
 import {
   componentTypes,
   ComponentConfigForm,
@@ -33,7 +34,8 @@ export default function CreateHomeComponentPage() {
       config: JSON.stringify(config),
     });
 
-    router.push('/admin/home-components');
+    toast.success('Tạo component thành công!');
+    setLoading(false);
   };
 
   const handleTypeChange = (newType: string) => {

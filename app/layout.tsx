@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ConvexClientProvider from "./components/ConvexProvider";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Trung Địa Tattoo - Art & Precision",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="vi">
       <body className="antialiased min-h-screen">
         <ConvexClientProvider>{children}</ConvexClientProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

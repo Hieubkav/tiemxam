@@ -21,7 +21,11 @@ export const getUrl = query({
 export const deleteFile = mutation({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, args) => {
-    await ctx.storage.delete(args.storageId);
+    try {
+      await ctx.storage.delete(args.storageId);
+    } catch {
+      // File có thể đã bị xóa hoặc không tồn tại
+    }
   },
 });
 

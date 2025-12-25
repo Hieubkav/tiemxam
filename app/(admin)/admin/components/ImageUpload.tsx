@@ -155,11 +155,11 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
       )}
 
       {preview ? (
-        <div className="relative inline-block">
+        <div className="relative inline-block w-full">
           <img
             src={preview}
             alt="Preview"
-            className="w-40 h-40 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+            className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
           />
           <button
             type="button"
@@ -176,7 +176,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center w-40 h-40 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+          className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
             isDragging
               ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
               : 'border-slate-300 dark:border-slate-600 hover:border-indigo-500'

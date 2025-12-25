@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CreateUserPage() {
   const router = useRouter();
@@ -29,8 +30,8 @@ export default function CreateUserPage() {
 
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
-    alert('Tao nguoi dung thanh cong!');
-    router.push('/admin/users');
+    toast.success('Tạo người dùng thành công!');
+    setLoading(false);
   };
 
   return (

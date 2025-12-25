@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { toast } from 'sonner';
 import {
   componentTypes,
   ComponentConfigForm,
@@ -59,7 +60,8 @@ export default function EditHomeComponentPage() {
       config: JSON.stringify(config),
     });
 
-    router.push('/admin/home-components');
+    toast.success('Cập nhật component thành công!');
+    setLoading(false);
   };
 
   const handleDelete = async () => {
@@ -101,7 +103,7 @@ export default function EditHomeComponentPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="max-w-3xl">
+      <form onSubmit={handleSubmit}>
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -113,7 +115,6 @@ export default function EditHomeComponentPage() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="VD: Hero Slider"
-              required
             />
           </div>
 
@@ -177,18 +178,12 @@ export default function EditHomeComponentPage() {
         </div>
       </form>
 
-      <div className="max-w-3xl bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 p-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Danger zone</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Xóa component sẽ loại bỏ khỏi danh sách hiển thị.
-        </p>
-        <button
-          onClick={handleDelete}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30"
-        >
-          <Trash2 size={16} /> Xóa component
-        </button>
-      </div>
+      <button
+        onClick={handleDelete}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30"
+      >
+        <Trash2 size={16} /> Xóa
+      </button>
     </div>
   );
 }
