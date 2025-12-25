@@ -44,14 +44,26 @@ export default defineSchema({
   settings: defineTable({
     key: v.string(),
     siteName: v.optional(v.string()),
-    logoUrl: v.optional(v.string()),
-    faviconUrl: v.optional(v.string()),
+    logoStorageId: v.optional(v.string()),
+    faviconStorageId: v.optional(v.string()),
     seoTitle: v.optional(v.string()),
     seoDescription: v.optional(v.string()),
+    seoKeywords: v.optional(v.array(v.string())),
     primaryColor: v.optional(v.string()),
     phone: v.optional(v.string()),
     zalo: v.optional(v.string()),
+    facebook: v.optional(v.string()),
     address: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+  users: defineTable({
+    name: v.string(),
+    email: v.string(),
+    role: v.union(v.literal("admin"), v.literal("editor"), v.literal("staff")),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_active", ["active"]),
 });

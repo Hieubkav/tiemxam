@@ -1,86 +1,71 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 
-const sampleUsers = [
-  {
-    id: 1,
-    name: 'Admin Trung Dia',
-    email: 'admin@trungdiatattoo.vn',
-    role: 'admin',
-    active: true,
-  },
-  {
-    id: 2,
-    name: 'Le Anh',
-    email: 'editor@trungdiatattoo.vn',
-    role: 'editor',
-    active: true,
-  },
-  {
-    id: 3,
-    name: 'Minh Chau',
-    email: 'staff@trungdiatattoo.vn',
-    role: 'staff',
-    active: false,
-  },
-];
+type Role = 'admin' | 'editor' | 'staff';
 
-export default function EditUserPage() {
+export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const params = useParams();
-  const rawId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const userId = Number(rawId);
-
-  const selected = useMemo(() => sampleUsers.find((u) => u.id === userId), [userId]);
-
+  const user = useQuery(api.users.getById, { id: id as Id<'users'> });
+  const updateUser = useMutation(api.users.update);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'editor',
-    password: '',
-    confirm: '',
+    role: 'editor' as Role,
     active: true,
   });
 
   useEffect(() => {
-    if (!selected) return;
-    setFormData({
-      name: selected.name,
-      email: selected.email,
-      role: selected.role,
-      password: '',
-      confirm: '',
-      active: selected.active,
-    });
-  }, [selected]);
+    if (user) {
+      setFormData({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        active: user.active,
+      });
+    }
+  }, [user]);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-600 dark:text-slate-400">Đang tải...</div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password && formData.password !== formData.confirm) {
-      setError('Mật khẩu và xác nhận không khớp.');
-      return;
-    }
-
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    toast.success('Cập nhật người dùng thành công!');
-    setLoading(false);
-  };
 
-  const handleDelete = async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    alert('Đã xóa người dùng!');
-    router.push('/admin/users');
+    try {
+      await updateUser({
+        id: id as Id<'users'>,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        active: formData.active,
+      });
+      toast.success('Cập nhật người dùng thành công!');
+      router.push('/admin/users');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Có lỗi xảy ra');
+      toast.error('Không thể cập nhật người dùng');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,16 +80,10 @@ export default function EditUserPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Chỉnh sửa người dùng</h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Cập nhật thông tin và phân quyền tài khoản
+            Cập nhật thông tin tài khoản quản trị
           </p>
         </div>
       </div>
-
-      {!selected && (
-        <div className="p-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg">
-          Không tìm thấy người dùng theo ID. Bạn có thể tạo mới hoặc cập nhật lại.
-        </div>
-      )}
 
       {error && (
         <div className="p-4 bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-200 rounded-lg border border-red-200 dark:border-red-500/40">
@@ -125,7 +104,7 @@ export default function EditUserPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Nhap ten nguoi dung"
+                  placeholder="Nhập tên người dùng"
                   required
                 />
               </div>
@@ -143,32 +122,6 @@ export default function EditUserPage() {
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Mật khẩu mới (tuỳ chọn)
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="********"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Xác nhận mật khẩu
-                </label>
-                <input
-                  type="password"
-                  value={formData.confirm}
-                  onChange={(e) => setFormData({ ...formData, confirm: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="********"
-                />
-              </div>
             </div>
           </div>
 
@@ -180,7 +133,7 @@ export default function EditUserPage() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="admin">Admin</option>
@@ -216,22 +169,8 @@ export default function EditUserPage() {
                 href="/admin/users"
                 className="block text-center px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                Huỷ
+                Hủy
               </Link>
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Danger zone</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                Xóa người dùng sẽ không thể khôi phục.
-              </p>
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30"
-              >
-                <Trash2 size={16} /> Xóa người dùng
-              </button>
             </div>
           </div>
         </div>

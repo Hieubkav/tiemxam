@@ -5,33 +5,43 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+
+type Role = 'admin' | 'editor' | 'staff';
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const createUser = useMutation(api.users.create);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'editor',
-    password: '',
-    confirm: '',
+    role: 'editor' as Role,
     active: true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password !== formData.confirm) {
-      setError('Mật khẩu và xác nhận không khớp.');
-      return;
-    }
-
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    toast.success('Tạo người dùng thành công!');
-    setLoading(false);
+
+    try {
+      await createUser({
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        active: formData.active,
+      });
+      toast.success('Tạo người dùng thành công!');
+      router.push('/admin/users');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Có lỗi xảy ra');
+      toast.error('Không thể tạo người dùng');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,34 +98,6 @@ export default function CreateUserPage() {
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Mật khẩu
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="********"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Xác nhận mật khẩu
-                </label>
-                <input
-                  type="password"
-                  value={formData.confirm}
-                  onChange={(e) => setFormData({ ...formData, confirm: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="********"
-                  required
-                />
-              </div>
             </div>
           </div>
 
@@ -127,7 +109,7 @@ export default function CreateUserPage() {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="admin">Admin</option>

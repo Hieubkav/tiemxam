@@ -3,54 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Pencil, Trash2, CheckCircle2, XCircle } from 'lucide-react';
-
-interface AdminUser {
-  id: number;
-  name: string;
-  email: string;
-  role: 'admin' | 'editor' | 'staff';
-  active: boolean;
-  createdAt: string;
-}
-
-const initialUsers: AdminUser[] = [
-  {
-    id: 1,
-    name: 'Admin Trung Dia',
-    email: 'admin@trungdiatattoo.vn',
-    role: 'admin',
-    active: true,
-    createdAt: '2024-10-12',
-  },
-  {
-    id: 2,
-    name: 'Le Anh',
-    email: 'editor@trungdiatattoo.vn',
-    role: 'editor',
-    active: true,
-    createdAt: '2024-11-02',
-  },
-  {
-    id: 3,
-    name: 'Minh Chau',
-    email: 'staff@trungdiatattoo.vn',
-    role: 'staff',
-    active: false,
-    createdAt: '2024-11-18',
-  },
-];
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 
 type Toast = { id: number; type: 'success' | 'error'; message: string };
 
-const roleLabels: Record<AdminUser['role'], string> = {
+type Role = 'admin' | 'editor' | 'staff';
+
+const roleLabels: Record<Role, string> = {
   admin: 'Quản trị',
   editor: 'Biên tập',
   staff: 'Nhân viên',
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const users = useQuery(api.users.list, {}) ?? [];
+  const updateUser = useMutation(api.users.update);
+  const removeUser = useMutation(api.users.remove);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const pushToast = (type: Toast['type'], message: string) => {
@@ -61,36 +32,41 @@ export default function UsersPage() {
     }, 3000);
   };
 
-  const toggleStatus = (id: number) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, active: !u.active } : u))
-    );
-    const user = users.find((u) => u.id === id);
-    pushToast('success', user?.active ? 'Đã tạm khóa người dùng' : 'Đã kích hoạt người dùng');
+  const toggleStatus = async (id: Id<'users'>) => {
+    const user = users.find((u) => u._id === id);
+    if (!user) return;
+    try {
+      await updateUser({ id, active: !user.active });
+      pushToast('success', user.active ? 'Đã tạm khóa người dùng' : 'Đã kích hoạt người dùng');
+    } catch (error) {
+      pushToast('error', 'Có lỗi xảy ra');
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: Id<'users'>) => {
     if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    pushToast('success', 'Da xoa nguoi dung');
+    try {
+      await removeUser({ id });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      pushToast('success', 'Đã xóa người dùng');
+    } catch (error) {
+      pushToast('error', 'Có lỗi xảy ra');
+    }
   };
 
   const toggleSelectAll = () => {
     if (selectedIds.size === users.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(users.map((u) => u.id)));
+      setSelectedIds(new Set(users.map((u) => u._id)));
     }
   };
 
-  const toggleSelectRow = (id: number) => {
-  
-  
+  const toggleSelectRow = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -99,19 +75,31 @@ export default function UsersPage() {
     });
   };
 
-  const handleBulk = (action: 'activate' | 'deactivate' | 'delete') => {
+  const handleBulk = async (action: 'activate' | 'deactivate' | 'delete') => {
     if (selectedIds.size === 0) return;
 
     if (action === 'delete') {
-      if (!confirm(`Ban co chac chan muon xoa ${selectedIds.size} nguoi dung?`)) return;
-      setUsers((prev) => prev.filter((u) => !selectedIds.has(u.id)));
-      pushToast('success', `Đã xóa ${selectedIds.size} người dùng`);
+      if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} người dùng?`)) return;
+      try {
+        await Promise.all(
+          Array.from(selectedIds).map((id) => removeUser({ id: id as Id<'users'> }))
+        );
+        pushToast('success', `Đã xóa ${selectedIds.size} người dùng`);
+      } catch (error) {
+        pushToast('error', 'Có lỗi xảy ra');
+      }
     } else {
       const active = action === 'activate';
-      setUsers((prev) =>
-        prev.map((u) => (selectedIds.has(u.id) ? { ...u, active } : u))
-      );
-      pushToast('success', active ? 'Đã kích hoạt người dùng' : 'Đã tạm khóa người dùng');
+      try {
+        await Promise.all(
+          Array.from(selectedIds).map((id) =>
+            updateUser({ id: id as Id<'users'>, active })
+          )
+        );
+        pushToast('success', active ? 'Đã kích hoạt người dùng' : 'Đã tạm khóa người dùng');
+      } catch (error) {
+        pushToast('error', 'Có lỗi xảy ra');
+      }
     }
 
     setSelectedIds(new Set());
@@ -189,7 +177,7 @@ export default function UsersPage() {
               ) : (
                 users.map((user, idx) => (
                   <tr
-                    key={user.id}
+                    key={user._id}
                     className={`${
                       idx % 2 === 0 ? 'bg-white dark:bg-slate-800/60' : 'bg-slate-50 dark:bg-slate-800/40'
                     } border-b last:border-0 border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors`}
@@ -197,8 +185,8 @@ export default function UsersPage() {
                     <td className="px-4 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(user.id)}
-                        onChange={() => toggleSelectRow(user.id)}
+                        checked={selectedIds.has(user._id)}
+                        onChange={() => toggleSelectRow(user._id)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600"
                       />
                     </td>
@@ -219,7 +207,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => toggleStatus(user.id)}
+                        onClick={() => toggleStatus(user._id)}
                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                           user.active
                             ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-100 dark:border-green-500/30'
@@ -236,13 +224,13 @@ export default function UsersPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/users/${user.id}`}
+                          href={`/admin/users/${user._id}`}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-700"
                         >
                           <Pencil size={16} />
                         </Link>
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => handleDelete(user._id)}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-slate-700"
                         >
                           <Trash2 size={16} />

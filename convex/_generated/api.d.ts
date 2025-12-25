@@ -12,6 +12,7 @@ import type * as files from "../files.js";
 import type * as homeComponents from "../homeComponents.js";
 import type * as posts from "../posts.js";
 import type * as settings from "../settings.js";
+import type * as users from "../users.js";
 import type * as visitors from "../visitors.js";
 
 import type {
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   homeComponents: typeof homeComponents;
   posts: typeof posts;
   settings: typeof settings;
+  users: typeof users;
   visitors: typeof visitors;
 }>;
 

@@ -159,7 +159,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
           <img
             src={preview}
             alt="Preview"
-            className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+            className="w-full h-48 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900"
           />
           <button
             type="button"
