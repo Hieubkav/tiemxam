@@ -61,7 +61,7 @@ export default function CreateHomeComponentPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-3xl">
+      <form onSubmit={handleSubmit}>
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
