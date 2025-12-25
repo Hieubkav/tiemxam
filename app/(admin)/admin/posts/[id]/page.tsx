@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Trash2, Image } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, X, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -18,9 +18,14 @@ export default function EditPostPage() {
   const selected = useQuery(api.posts.getById, id ? { id } : 'skip');
   const updatePost = useMutation(api.posts.update);
   const removePost = useMutation(api.posts.remove);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const contentStorageIdsRef = useRef<string[]>([]);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [thumbnailStorageId, setThumbnailStorageId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -28,6 +33,12 @@ export default function EditPostPage() {
     thumbnail: '',
     active: true,
   });
+
+  // Query URL từ storageId mới upload
+  const newThumbnailUrl = useQuery(
+    api.files.getUrl,
+    thumbnailStorageId ? { storageId: thumbnailStorageId as Id<'_storage'> } : 'skip'
+  );
 
   useEffect(() => {
     if (!selected) return;
@@ -39,7 +50,19 @@ export default function EditPostPage() {
       active: selected.active,
     });
     contentStorageIdsRef.current = selected.contentStorageIds ?? [];
+    setLocalPreview(null);
+    setThumbnailStorageId(null);
   }, [selected]);
+
+  // Cập nhật thumbnail URL khi có từ query (upload mới)
+  useEffect(() => {
+    if (newThumbnailUrl) {
+      setFormData((prev) => ({ ...prev, thumbnail: newThumbnailUrl }));
+    }
+  }, [newThumbnailUrl]);
+
+  // Preview = local preview, URL mới upload, hoặc URL cũ từ DB
+  const thumbnailPreview = localPreview || newThumbnailUrl || formData.thumbnail;
 
   const generateSlug = (title: string) => {
     return title
@@ -89,6 +112,49 @@ export default function EditPostPage() {
   const handleContentChange = (html: string, storageIds: string[]) => {
     setFormData({ ...formData, content: html });
     contentStorageIdsRef.current = storageIds;
+  };
+
+  const handleThumbnailUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh');
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const { storageId } = (await res.json()) as { storageId: Id<'_storage'> };
+      setLocalPreview(URL.createObjectURL(file));
+      setThumbnailStorageId(storageId);
+      toast.success('Upload ảnh thành công!');
+    } catch {
+      toast.error('Không thể upload ảnh');
+    } finally {
+      setUploading(false);
+    }
+  }, [generateUploadUrl]);
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleThumbnailUpload(file);
+    e.target.value = '';
+  };
+
+  const handleThumbnailDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleThumbnailUpload(file);
+  }, [handleThumbnailUpload]);
+
+  const removeThumbnail = () => {
+    setFormData((prev) => ({ ...prev, thumbnail: '' }));
+    setLocalPreview(null);
+    setThumbnailStorageId(null);
   };
 
   const handleDelete = async () => {
@@ -191,19 +257,51 @@ export default function EditPostPage() {
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4">
               <h3 className="font-semibold text-slate-900 dark:text-white">Ảnh đại diện</h3>
 
-              <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center">
-                <Image size={32} className="mx-auto text-slate-400 mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Kéo thả hoặc click để upload
-                </p>
-              </div>
+              {thumbnailPreview ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="w-full max-h-48 object-contain rounded-lg bg-slate-100 dark:bg-slate-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  onDrop={handleThumbnailDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+                >
+                  {uploading ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2" />
+                      <p className="text-sm text-slate-500">Đang upload...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={32} className="mx-auto text-slate-400 mb-2" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Kéo thả hoặc click để upload
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
 
               <input
-                type="text"
-                value={formData.thumbnail}
-                onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                placeholder="Hoặc nhập URL ảnh"
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailFileChange}
+                className="hidden"
               />
             </div>
 

@@ -122,6 +122,7 @@ export default function PostsPage() {
                     className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600"
                   />
                 </th>
+                <th className="px-4 py-3 w-20">Ảnh</th>
                 <th className="px-4 py-3">Tiêu đề</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3">Cập nhật</th>
@@ -131,7 +132,7 @@ export default function PostsPage() {
             <tbody>
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                     Chưa có bài viết nào
                   </td>
                 </tr>
@@ -150,6 +151,19 @@ export default function PostsPage() {
                         onChange={() => toggleSelectRow(post._id)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 accent-indigo-600"
                       />
+                    </td>
+                    <td className="px-4 py-4">
+                      {post.thumbnail ? (
+                        <img
+                          src={post.thumbnail}
+                          alt={post.title}
+                          className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">No img</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <div className="font-semibold text-slate-900 dark:text-white">{post.title}</div>

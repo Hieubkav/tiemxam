@@ -17,6 +17,14 @@ export const getUrl = query({
   },
 });
 
+// Mutation lấy URL (dùng trong callback không thể dùng useQuery)
+export const getUrlMutation = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
 // Xóa file khỏi storage
 export const deleteFile = mutation({
   args: { storageId: v.id("_storage") },

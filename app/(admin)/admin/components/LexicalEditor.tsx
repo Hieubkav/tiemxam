@@ -335,6 +335,7 @@ interface LexicalEditorProps {
 
 export default function LexicalEditor({ value, onChange, placeholder = 'Nhập nội dung...' }: LexicalEditorProps) {
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const getUrlMutation = useMutation(api.files.getUrlMutation);
   const [editor, setEditor] = useState<LexicalEditorType | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -398,8 +399,9 @@ export default function LexicalEditor({ value, onChange, placeholder = 'Nhập n
 
         const { storageId } = (await res.json()) as { storageId: Id<'_storage'> };
         
-        // Get the URL - Convex storage URL pattern
-        const imageUrl = `${process.env.NEXT_PUBLIC_CONVEX_URL?.replace('.cloud', '.site')}/api/storage/${storageId}`;
+        // Lấy URL thực từ Convex
+        const imageUrl = await getUrlMutation({ storageId });
+        if (!imageUrl) throw new Error('Failed to get image URL');
 
         editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
           src: imageUrl,
@@ -412,7 +414,7 @@ export default function LexicalEditor({ value, onChange, placeholder = 'Nhập n
 
       e.target.value = '';
     },
-    [editor, generateUploadUrl]
+    [editor, generateUploadUrl, getUrlMutation]
   );
 
   return (
