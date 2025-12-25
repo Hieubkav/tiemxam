@@ -66,4 +66,14 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_active", ["active"]),
+  menus: defineTable({
+    name: v.string(),
+    url: v.string(),
+    order: v.number(),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_order", ["order"])
+    .index("by_active", ["active"]),
 });

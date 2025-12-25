@@ -12,6 +12,7 @@ import {
   Layers,
   Home,
   Settings,
+  Menu,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Tổng Quan', href: '/admin' },
     { id: 'home-components', icon: Layers, label: 'Giao diện trang chủ', href: '/admin/home-components' },
+    { id: 'menus', icon: Menu, label: 'Menu', href: '/admin/menus' },
     { id: 'posts', icon: FileText, label: 'Bài viết', href: '/admin/posts' },
     { id: 'users', icon: Users, label: 'Người dùng', href: '/admin/users' },
     { id: 'settings', icon: Settings, label: 'Cài đặt', href: '/admin/settings' },
