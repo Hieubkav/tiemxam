@@ -1,5 +1,35 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+// Helper để lấy tất cả storageIds từ config
+function extractStorageIds(config: string | undefined): Id<"_storage">[] {
+  if (!config) return [];
+  try {
+    const parsed = JSON.parse(config);
+    const ids: Id<"_storage">[] = [];
+
+    const extract = (obj: unknown) => {
+      if (!obj || typeof obj !== "object") return;
+      if (Array.isArray(obj)) {
+        obj.forEach(extract);
+      } else {
+        for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+          if (key === "storageId" && typeof value === "string") {
+            ids.push(value as Id<"_storage">);
+          } else {
+            extract(value);
+          }
+        }
+      }
+    };
+
+    extract(parsed);
+    return ids;
+  } catch {
+    return [];
+  }
+}
 
 export const list = query({
   args: { activeOnly: v.optional(v.boolean()) },
@@ -57,6 +87,27 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const { id, ...rest } = args;
+
+    // Nếu config thay đổi, cleanup files cũ không còn dùng
+    if (rest.config !== undefined) {
+      const existing = await ctx.db.get(id);
+      if (existing) {
+        const oldIds = new Set(extractStorageIds(existing.config));
+        const newIds = new Set(extractStorageIds(rest.config));
+
+        // Xóa các file cũ không còn trong config mới
+        for (const oldId of oldIds) {
+          if (!newIds.has(oldId)) {
+            try {
+              await ctx.storage.delete(oldId);
+            } catch {
+              // File có thể đã bị xóa
+            }
+          }
+        }
+      }
+    }
+
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     for (const [key, value] of Object.entries(rest)) {
       if (value !== undefined) patch[key] = value;
@@ -69,6 +120,19 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("home_components") },
   handler: async (ctx, args) => {
+    // Lấy component trước khi xóa để cleanup files
+    const component = await ctx.db.get(args.id);
+    if (component) {
+      // Xóa các files trong storage
+      const storageIds = extractStorageIds(component.config);
+      for (const storageId of storageIds) {
+        try {
+          await ctx.storage.delete(storageId);
+        } catch {
+          // File có thể đã bị xóa
+        }
+      }
+    }
     await ctx.db.delete(args.id);
     return args.id;
   },

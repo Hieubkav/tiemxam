@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as files from "../files.js";
 import type * as homeComponents from "../homeComponents.js";
 import type * as posts from "../posts.js";
 import type * as settings from "../settings.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  files: typeof files;
   homeComponents: typeof homeComponents;
   posts: typeof posts;
   settings: typeof settings;

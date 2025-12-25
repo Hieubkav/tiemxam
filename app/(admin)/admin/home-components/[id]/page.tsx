@@ -7,16 +7,10 @@ import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-
-const componentTypes = [
-  { value: 'hero', label: 'Hero Banner' },
-  { value: 'portfolio', label: 'Portfolio Grid' },
-  { value: 'latest', label: 'Latest Works' },
-  { value: 'services', label: 'Services' },
-  { value: 'testimonials', label: 'Testimonials' },
-  { value: 'posts', label: 'Blog Posts' },
-  { value: 'custom', label: 'Custom Section' },
-];
+import {
+  componentTypes,
+  ComponentConfigForm,
+} from '../../components/ComponentConfigForms';
 
 export default function EditHomeComponentPage() {
   const router = useRouter();
@@ -32,8 +26,8 @@ export default function EditHomeComponentPage() {
     name: '',
     type: 'hero',
     active: true,
-    config: '',
   });
+  const [config, setConfig] = useState<unknown>({});
 
   useEffect(() => {
     if (!selected) return;
@@ -41,8 +35,15 @@ export default function EditHomeComponentPage() {
       name: selected.name,
       type: selected.type,
       active: selected.active,
-      config: selected.config ?? '',
     });
+    // Parse config từ JSON
+    if (selected.config) {
+      try {
+        setConfig(JSON.parse(selected.config));
+      } catch {
+        setConfig({});
+      }
+    }
   }, [selected]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +56,7 @@ export default function EditHomeComponentPage() {
       name: formData.name,
       type: formData.type,
       active: formData.active,
-      config: formData.config ? formData.config : undefined,
+      config: JSON.stringify(config),
     });
 
     router.push('/admin/home-components');
@@ -67,6 +68,12 @@ export default function EditHomeComponentPage() {
 
     await removeComponent({ id });
     router.push('/admin/home-components');
+  };
+
+  const handleTypeChange = (newType: string) => {
+    setFormData({ ...formData, type: newType });
+    // Reset config khi đổi type
+    setConfig({});
   };
 
   return (
@@ -94,7 +101,7 @@ export default function EditHomeComponentPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="max-w-2xl">
+      <form onSubmit={handleSubmit} className="max-w-3xl">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -116,7 +123,7 @@ export default function EditHomeComponentPage() {
             </label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               {componentTypes.map((type) => (
@@ -127,16 +134,14 @@ export default function EditHomeComponentPage() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Cấu hình (JSON)
-            </label>
-            <textarea
-              value={formData.config}
-              onChange={(e) => setFormData({ ...formData, config: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
-              rows={7}
-              placeholder='{"title": "...", "items": []}'
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              Cấu hình {componentTypes.find((t) => t.value === formData.type)?.label}
+            </h3>
+            <ComponentConfigForm
+              type={formData.type}
+              config={config}
+              onChange={setConfig}
             />
           </div>
 
@@ -164,7 +169,7 @@ export default function EditHomeComponentPage() {
             </button>
             <Link
               href="/admin/home-components"
-              className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hoverbg-slate-700 transition"
+              className="px-6 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
             >
               Hủy
             </Link>
@@ -172,7 +177,7 @@ export default function EditHomeComponentPage() {
         </div>
       </form>
 
-      <div className="max-w-2xl bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 p-6">
+      <div className="max-w-3xl bg-white dark:bg-slate-800 rounded-xl border border-red-200 dark:border-red-700 p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Danger zone</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
           Xóa component sẽ loại bỏ khỏi danh sách hiển thị.

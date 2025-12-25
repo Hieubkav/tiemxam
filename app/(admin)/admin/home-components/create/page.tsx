@@ -6,16 +6,10 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-
-const componentTypes = [
-  { value: 'hero', label: 'Hero Banner' },
-  { value: 'portfolio', label: 'Portfolio Grid' },
-  { value: 'latest', label: 'Latest Works' },
-  { value: 'services', label: 'Services' },
-  { value: 'testimonials', label: 'Testimonials' },
-  { value: 'posts', label: 'Blog Posts' },
-  { value: 'custom', label: 'Custom Section' },
-];
+import {
+  componentTypes,
+  ComponentConfigForm,
+} from '../../components/ComponentConfigForms';
 
 export default function CreateHomeComponentPage() {
   const router = useRouter();
@@ -25,8 +19,8 @@ export default function CreateHomeComponentPage() {
     name: '',
     type: 'hero',
     active: true,
-    config: '',
   });
+  const [config, setConfig] = useState<unknown>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +30,16 @@ export default function CreateHomeComponentPage() {
       name: formData.name,
       type: formData.type,
       active: formData.active,
-      config: formData.config ? formData.config : undefined,
+      config: JSON.stringify(config),
     });
 
     router.push('/admin/home-components');
+  };
+
+  const handleTypeChange = (newType: string) => {
+    setFormData({ ...formData, type: newType });
+    // Reset config khi đổi type
+    setConfig({});
   };
 
   return (
@@ -59,7 +59,7 @@ export default function CreateHomeComponentPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl">
+      <form onSubmit={handleSubmit} className="max-w-3xl">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -81,7 +81,7 @@ export default function CreateHomeComponentPage() {
             </label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               {componentTypes.map((type) => (
@@ -92,16 +92,14 @@ export default function CreateHomeComponentPage() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Cấu hình (JSON)
-            </label>
-            <textarea
-              value={formData.config}
-              onChange={(e) => setFormData({ ...formData, config: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
-              rows={6}
-              placeholder='{"title": "...", "items": []}'
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              Cấu hình {componentTypes.find((t) => t.value === formData.type)?.label}
+            </h3>
+            <ComponentConfigForm
+              type={formData.type}
+              config={config}
+              onChange={setConfig}
             />
           </div>
 
