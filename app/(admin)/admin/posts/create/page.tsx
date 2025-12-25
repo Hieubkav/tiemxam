@@ -1,21 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Image } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
+import LexicalEditor from '../../components/LexicalEditor';
 
 export default function CreatePostPage() {
   const router = useRouter();
   const createPost = useMutation(api.posts.create);
   const [loading, setLoading] = useState(false);
+  const contentStorageIdsRef = useRef<string[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
-    excerpt: '',
     content: '',
     thumbnail: '',
     active: true,
@@ -50,17 +51,23 @@ export default function CreatePostPage() {
       await createPost({
         title: formData.title,
         slug: formData.slug,
-        excerpt: formData.excerpt ? formData.excerpt : undefined,
         content: formData.content,
         thumbnail: formData.thumbnail ? formData.thumbnail : undefined,
         active: formData.active,
+        contentStorageIds: contentStorageIdsRef.current.length > 0 ? contentStorageIdsRef.current : undefined,
       });
       toast.success('Tạo bài viết thành công!');
+      router.push('/admin/posts');
     } catch (err) {
       toast.error('Không thể tạo bài viết. Vui lòng kiểm tra slug.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleContentChange = (html: string, storageIds: string[]) => {
+    setFormData({ ...formData, content: html });
+    contentStorageIdsRef.current = storageIds;
   };
 
   return (
@@ -100,41 +107,11 @@ export default function CreatePostPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Slug (URL)
-                </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
-                  placeholder="duong-dan-bai-viet"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Mô tả ngắn
-                </label>
-                <textarea
-                  value={formData.excerpt}
-                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="Mô tả ngắn gọn nội dung bài viết..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Nội dung
                 </label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  rows={12}
-                  placeholder="Nội dung bài viết..."
-                  required
+                <LexicalEditor
+                  onChange={handleContentChange}
+                  placeholder="Nhập nội dung bài viết..."
                 />
               </div>
             </div>

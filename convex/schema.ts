@@ -16,10 +16,10 @@ export default defineSchema({
   posts: defineTable({
     title: v.string(),
     slug: v.string(),
-    excerpt: v.optional(v.string()),
     content: v.string(),
     thumbnail: v.optional(v.string()),
     active: v.boolean(),
+    contentStorageIds: v.optional(v.array(v.string())),
     createdAt: v.number(),
     updatedAt: v.number(),
     publishedAt: v.optional(v.number()),

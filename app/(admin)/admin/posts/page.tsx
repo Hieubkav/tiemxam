@@ -154,7 +154,7 @@ export default function PostsPage() {
                     <td className="px-4 py-4">
                       <div className="font-semibold text-slate-900 dark:text-white">{post.title}</div>
                       <p className="text-slate-500 dark:text-slate-400 text-sm truncate max-w-md">
-                        {post.excerpt ?? ''}
+                        /{post.slug}
                       </p>
                     </td>
                     <td className="px-4 py-4">
