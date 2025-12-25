@@ -1,5 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { ChevronDown, Check } from 'lucide-react';
 import { SortableImageGrid } from './SortableImageGrid';
 
 // Định nghĩa các loại component và cấu hình của chúng
@@ -44,7 +48,7 @@ export interface TestimonialsConfig {
 
 export interface PostsConfig {
   title?: string;
-  count: number;
+  postIds: string[];
 }
 
 export interface CustomConfig {
@@ -328,6 +332,19 @@ export function TestimonialsForm({
 
 // Form cho Posts
 export function PostsForm({ value, onChange }: FormProps<PostsConfig>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const posts = useQuery(api.posts.list, {});
+  const selectedIds = value.postIds || [];
+
+  const togglePost = (postId: string) => {
+    const newIds = selectedIds.includes(postId)
+      ? selectedIds.filter((id) => id !== postId)
+      : [...selectedIds, postId];
+    onChange({ ...value, postIds: newIds });
+  };
+
+  const selectedPosts = posts?.filter((p) => selectedIds.includes(p._id)) || [];
+
   return (
     <div className="space-y-4">
       <div>
@@ -345,18 +362,77 @@ export function PostsForm({ value, onChange }: FormProps<PostsConfig>) {
 
       <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-          Số bài viết hiển thị
+          Chọn bài viết ({selectedIds.length} đã chọn)
         </label>
-        <input
-          type="number"
-          value={value.count || 4}
-          onChange={(e) =>
-            onChange({ ...value, count: parseInt(e.target.value) || 4 })
-          }
-          className="w-32 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          min={1}
-          max={12}
-        />
+        
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-left flex items-center justify-between"
+          >
+            <span className="truncate">
+              {selectedIds.length === 0
+                ? 'Chọn bài viết...'
+                : `${selectedIds.length} bài viết đã chọn`}
+            </span>
+            <ChevronDown size={18} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isOpen && (
+            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {!posts ? (
+                <div className="p-3 text-center text-slate-500">Đang tải...</div>
+              ) : posts.length === 0 ? (
+                <div className="p-3 text-center text-slate-500">Chưa có bài viết nào</div>
+              ) : (
+                posts.map((post) => (
+                  <div
+                    key={post._id}
+                    onClick={() => togglePost(post._id)}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                  >
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                      selectedIds.includes(post._id)
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-slate-300 dark:border-slate-600'
+                    }`}>
+                      {selectedIds.includes(post._id) && <Check size={14} className="text-white" />}
+                    </div>
+                    <span className="flex-1 truncate text-sm">{post.title}</span>
+                    {!post.active && (
+                      <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">Ẩn</span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {selectedPosts.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Thứ tự hiển thị:</p>
+            {selectedPosts.map((post, idx) => (
+              <div
+                key={post._id}
+                className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-700 rounded text-sm"
+              >
+                <span className="w-6 h-6 flex items-center justify-center bg-slate-200 dark:bg-slate-600 rounded text-xs font-medium">
+                  {idx + 1}
+                </span>
+                <span className="flex-1 truncate">{post.title}</span>
+                <button
+                  type="button"
+                  onClick={() => togglePost(post._id)}
+                  className="text-red-500 hover:text-red-700 text-xs"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -422,7 +498,7 @@ export function ComponentConfigForm({ type, config, onChange }: DynamicFormProps
     case 'posts':
       return (
         <PostsForm
-          value={(config as PostsConfig) || { count: 4 }}
+          value={(config as PostsConfig) || { postIds: [] }}
           onChange={onChange}
         />
       );

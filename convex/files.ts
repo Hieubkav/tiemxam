@@ -94,3 +94,19 @@ export const getUsedStorageIds = query({
     return Array.from(usedIds);
   },
 });
+
+// Query lấy nhiều URLs cùng lúc
+export const getUrls = query({
+  args: { storageIds: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const urls: Record<string, string | null> = {};
+    for (const id of args.storageIds) {
+      try {
+        urls[id] = await ctx.storage.getUrl(id as Id<"_storage">);
+      } catch {
+        urls[id] = null;
+      }
+    }
+    return urls;
+  },
+});
