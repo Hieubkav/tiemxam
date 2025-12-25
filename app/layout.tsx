@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ConvexClientProvider from "./components/ConvexProvider";
+import DynamicMetadata from "./components/DynamicMetadata";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
@@ -16,7 +17,10 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="antialiased min-h-screen">
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ConvexClientProvider>
+          <DynamicMetadata />
+          {children}
+        </ConvexClientProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>
